@@ -19,7 +19,7 @@ private:
 
 	void IncreaseDataSize(unsigned int newSize);
 	bool getNthBit(unsigned int n) const;
-
+	void CalculateNumLengthFrom(unsigned int n);
 public:
 	BigUnsignedInt(); // default numeric value = 0
 	BigUnsignedInt(int num); //using negative number throws underflow error
@@ -95,4 +95,5 @@ public:
 
 	std::string getHexStr() const;
 	std::string getDexStr() const;
+	friend BigUnsignedInt multiply(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
 };

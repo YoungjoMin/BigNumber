@@ -4,51 +4,84 @@ bool BigUnsignedInt::isOutStringHexMode = false;
 
 BigUnsignedInt::BigUnsignedInt()
 {
-	dataSize = 1;
-	data = new BaseData[dataSize];
-	data[0] = 0;
+	dataSize = 0;
+	data = nullptr;
 	numLength = 0;
-
 }
 BigUnsignedInt::BigUnsignedInt(int num)
 {
 	if (num < 0)
 		throw(std::underflow_error("Becomes negative number"));
-	dataSize = 1;
-	data = new BaseData[dataSize];
-	data[0] = num;
-	numLength = (num == 0) ? 0 : 1;
+	else if (num == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		dataSize = 1;
+		data = new BaseData[dataSize];
+		data[0] = num;
+		numLength = 1;
+	}
 }
 BigUnsignedInt::BigUnsignedInt(unsigned int num)
 {
-	dataSize = 1;
-	data = new BaseData[dataSize];
-	data[0] = num;
-	numLength = (num == 0) ? 0 : 1;
+	if (num == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		dataSize = 1;
+		data = new BaseData[dataSize];
+		data[0] = num;
+		numLength = 1;
+	}
 }
 BigUnsignedInt::BigUnsignedInt(long long num)
 {
 	if (num < 0)
 		throw(std::underflow_error("Becomes negative number"));
-	dataSize = 1;
-	data = new BaseData[dataSize];
-	data[0] = num;
-	numLength = (num == 0) ? 0 : 1;
+	else if (num == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		dataSize = 1;
+		data = new BaseData[dataSize];
+		data[0] = num;
+		numLength = 1;
+	}
 }
 BigUnsignedInt::BigUnsignedInt(unsigned long long num)
 {
-	dataSize = 1;
-	data = new BaseData[dataSize];
-	data[0] = num;
-	numLength = (num == 0) ? 0 : 1;
+	if (num == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		dataSize = 1;
+		data = new BaseData[dataSize];
+		data[0] = num;
+		numLength = 1;
+	}
 }
 
 BigUnsignedInt::BigUnsignedInt(const BigUnsignedInt& num)
 {
-	dataSize = num.dataSize;
-	data = new BaseData[dataSize];
-	std::memcpy(data, num.data, sizeof(BaseData)* num.dataSize);
-	numLength = num.numLength;
+	if (num.numLength == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		dataSize = num.dataSize;
+		data = new BaseData[dataSize];
+		std::memcpy(data, num.data, sizeof(BaseData)* num.dataSize);
+		numLength = num.numLength;
+	}
 }
 BigUnsignedInt::BigUnsignedInt(BigUnsignedInt && num)
 {
@@ -89,6 +122,9 @@ BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 {//TODO
  //temporary code
 	BigUnsignedInt ret;
+	if (!num2)
+		return ret;
+
 	BigUnsignedInt temp = num1;
 	unsigned int num2HighestBit = num2.floorLog2();
 	for (unsigned int i = 0; i <= num2HighestBit; i++) {
@@ -98,6 +134,7 @@ BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 	}
 	return ret;
 }
+
 BigUnsignedInt& BigUnsignedInt::operator+=(const BigUnsignedInt& num)
 {
 	BaseData MidResult;
@@ -153,21 +190,12 @@ BigUnsignedInt& BigUnsignedInt::operator-=(const BigUnsignedInt& num)
 		for (unsigned int i = num.numLength; i < numLength; i++) {
 			BaseData& a = data[i];
 			isBorrowing = (a == 0);
-			a -= 1;
+			a--;
 			if (!isBorrowing)
 				break;
 		}
 	}
-	if (data[numLength - 1] == 0) {
-		for (int i = numLength - 2; i >= 0; i--) {
-			if (data[i] != 0) {
-				numLength = i + 1;
-				break;
-			}
-		}
-		if (data[numLength - 1] == 0) // this case each i at loop data[i]=0, so numLength didn't changed so num = 0
-			numLength = 0;
-	}
+	this->CalculateNumLengthFrom(numLength);
 	return (*this);
 }
 BigUnsignedInt& BigUnsignedInt::operator*=(const BigUnsignedInt& num)
@@ -189,7 +217,8 @@ BigUnsignedInt& BigUnsignedInt::operator++()
 	if (carry) {
 		numLength++;
 		if (numLength > dataSize) {
-			this->IncreaseDataSize(2 * dataSize);
+			unsigned int newSize = (dataSize == 0) ? 1 : 2 * dataSize;
+			this->IncreaseDataSize(newSize);
 		}
 		data[numLength - 1] = 0x1;
 	}
@@ -232,10 +261,17 @@ BigUnsignedInt& BigUnsignedInt::operator=(const BigUnsignedInt& num)
 		return (*this);
 
 	delete[] data;
-	data = new BaseData[num.dataSize];
-	memcpy(data, num.data, sizeof(BaseData)*num.dataSize);
-	dataSize = num.dataSize;
-	numLength = num.numLength;
+	if (num.numLength == 0) {
+		dataSize = 0;
+		data = nullptr;
+		numLength = 0;
+	}
+	else {
+		data = new BaseData[num.dataSize];
+		memcpy(data, num.data, sizeof(BaseData)*num.dataSize);
+		dataSize = num.dataSize;
+		numLength = num.numLength;
+	}
 	return (*this);
 }
 BigUnsignedInt& BigUnsignedInt::operator=(BigUnsignedInt && num)
@@ -287,14 +323,7 @@ BigUnsignedInt operator&(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 	for (unsigned int i = 0; i < min; i++)
 		ret.data[i] = num1.data[i] & num2.data[i];
 
-	for (int i = min - 1; i >= 0; i--) {
-		if (ret.data[i] != 0) {
-			ret.numLength = i + 1;
-			break;
-		}
-	}
-	if (ret.data[ret.numLength - 1] == 0)
-		ret.numLength = 0;
+	ret.CalculateNumLengthFrom(min);
 	return ret;
 }
 BigUnsignedInt operator|(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
@@ -426,14 +455,7 @@ BigUnsignedInt& BigUnsignedInt::operator&=(const BigUnsignedInt& num)
 		data[i] &= num.data[i];
 	for (unsigned int i = min; i < numLength; i++)
 		data[i] = 0;
-	for (int i = min - 1; i >= 0; i--) {
-		if (data[i] != 0) {
-			numLength = i + 1;
-			break;
-		}
-	}
-	if (data[numLength - 1] == 0)
-		numLength = 0;
+	this->CalculateNumLengthFrom(min);
 	return (*this);
 }
 BigUnsignedInt& BigUnsignedInt::operator|=(const BigUnsignedInt& num)
@@ -453,14 +475,7 @@ BigUnsignedInt& BigUnsignedInt::operator^=(const BigUnsignedInt& num)
 	for (unsigned int i = 0; i < num.numLength; i++) {
 		data[i] ^= num.data[i];
 	}
-	for (int i = numLength - 1; i >= 0; i--) {
-		if (data[i] != 0) {
-			numLength = i + 1;
-			break;
-		}
-	}
-	if (data[numLength - 1] == 0)
-		numLength = 0;
+	this->CalculateNumLengthFrom(numLength);
 	return (*this);
 }
 bool operator==(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
@@ -485,6 +500,7 @@ bool operator<(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 		return true;
 	if (num1.numLength > num2.numLength)
 		return false;
+
 	//when num1.numLength == num2.numLength
 	for (int i = num1.numLength - 1; i >= 0; i--) {
 		if (num1.data[i] < num2.data[i])
@@ -500,6 +516,7 @@ bool operator<=(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 		return true;
 	if (num1.numLength > num2.numLength)
 		return false;
+
 	//when num1.numLength == num2.numLength
 	for (int i = num1.numLength - 1; i >= 0; i--) {
 		if (num1.data[i] < num2.data[i])
@@ -665,4 +682,15 @@ bool BigUnsignedInt::getNthBit(unsigned int n) const
 	if (n > (numLength*BaseDataLen))
 		return 0;
 	return (data[ArrayPos] >> DataPos) & 0x1;
+}
+void BigUnsignedInt::CalculateNumLengthFrom(unsigned int n)
+{
+	numLength = 0;
+	for (int i = n-1; i >= 0; i--) {
+		if (data[i] != 0) {
+			numLength = i + 1;
+			break;
+		}
+	}
+	return;
 }
