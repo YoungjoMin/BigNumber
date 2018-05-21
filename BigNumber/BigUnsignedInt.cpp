@@ -122,7 +122,7 @@ BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 {//TODO
  //temporary code
 	BigUnsignedInt ret;
-	if (!num2)
+	if (num2 == 0)
 		return ret;
 
 	BigUnsignedInt temp = num1;
@@ -268,7 +268,7 @@ BigUnsignedInt& BigUnsignedInt::operator=(const BigUnsignedInt& num)
 	}
 	else {
 		data = new BaseData[num.dataSize];
-		memcpy(data, num.data, sizeof(BaseData)*num.dataSize);
+		std::memcpy(data, num.data, sizeof(BaseData)*num.dataSize);
 		dataSize = num.dataSize;
 		numLength = num.numLength;
 	}
@@ -535,15 +535,6 @@ bool operator>=(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 	return !(num1 < num2);
 }
 
-bool BigUnsignedInt::operator!() const
-{
-	return (numLength == 0);
-}
-BigUnsignedInt::operator bool() const
-{
-	return (numLength != 0);
-}
-
 BigUnsignedInt::operator std::string() const
 {
 	if (isOutStringHexMode)
@@ -668,8 +659,8 @@ void BigUnsignedInt::IncreaseDataSize(unsigned int newSize)
 	BaseData * newData;
 	newData = new BaseData[newSize];
 
-	std::memcpy(newData, data, sizeof(BaseData)*numLength);
-	std::memset(newData + numLength, 0, sizeof(BaseData) * (newSize - numLength));
+	std::memcpy(newData, data, sizeof(BaseData)*dataSize);
+	std::memset(newData + dataSize, 0, sizeof(BaseData) * (newSize - dataSize));
 	delete[] data;
 	data = newData;
 	dataSize = newSize;

@@ -83,11 +83,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const BigUnsignedInt& num);
 	friend std::istream& operator>>(std::istream& is, BigUnsignedInt& num);
 
-	operator int() const = delete;
-	bool operator!() const;
-	operator bool() const;
 	operator std::string() const;
-
 
 	BigUnsignedInt pow(const BigUnsignedInt& base, unsigned int exp);
 	BigUnsignedInt pow(const BigUnsignedInt& base, const BigUnsignedInt& exp);
