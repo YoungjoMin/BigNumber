@@ -10,26 +10,6 @@ class BigUnsignedInt
 {
 	using BaseData = unsigned long long;
 private:
-	static BaseData MultiplyLowerData(BaseData num1, BaseData num2)
-	{
-		return num1*num2;
-	}
-	static BaseData MultiplyUpperData(BaseData a, BaseData b)
-	{
-		BaseData s0, s1, s2, x;
-		x = lo(a) * lo(b);
-		s0 = lo(x);
-
-		x = hi(a) * lo(b) + hi(x);
-		s1 = lo(x);
-		s2 = hi(x);
-
-		x = s1 + lo(a) * hi(b);
-		s1 = lo(x);
-
-		x = s2 + hi(a) * hi(b) + hi(x);
-		return x;
-	}
 	inline static BaseData lo(BaseData num) {return (((BaseData)1 << (BaseDataLen / 2)) - 1)&num;}
 	inline static BaseData hi(BaseData num) { return (num >> (BaseDataLen / 2)); }
 	static bool isOutStringHexMode; //default false
