@@ -119,20 +119,53 @@ BigUnsignedInt operator-(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 	return temp;
 }
 BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
-{//TODO
- //temporary code
-	BigUnsignedInt ret;
-	if (num2 == 0)
-		return ret;
+{
+	if ((num1 == 0) | (num2 == 0))
+		return 0;
 
-	BigUnsignedInt temp = num1;
-	unsigned int num2HighestBit = num2.floorLog2();
-	for (unsigned int i = 0; i <= num2HighestBit; i++) {
-		if (num2.getNthBit(i) != 0)
-			ret += temp;
-		temp <<= 1;
+	unsigned int returnSize = num1.numLength + num2.numLength + 1;
+	unsigned int newSize = std::max(num1.dataSize, num2.dataSize);
+	while (newSize < returnSize)
+		newSize *= 2;
+	BigUnsignedInt::BaseData carry1 = 0, carry2 = 0, temp;
+	BigUnsignedInt part1, part2;
+	part1.IncreaseDataSize(newSize);
+	part2.IncreaseDataSize(newSize);
+	for (unsigned int i = 0; i < num1.numLength; i++) {
+		carry1 = carry2 = 0;
+		for (unsigned int j = 0; j < num2.numLength; j++) {
+			temp = BigUnsignedInt::lo(num1.data[i])*BigUnsignedInt::lo(num2.data[j]);
+			temp += part1.data[i + j];
+			carry1 += (temp < part1.data[i + j]) ? 0x1 : 0x0;
+			part1.data[i + j] = temp;
+
+			temp = BigUnsignedInt::hi(num1.data[i])*BigUnsignedInt::hi(num2.data[j]) + carry1;
+			temp += part1.data[i + j + 1];
+			carry1 = (temp < part1.data[i + j + 1]) ? 0x1 : 0x0;
+			part1.data[i + j + 1] = temp;
+
+			temp = BigUnsignedInt::lo(num1.data[i])*BigUnsignedInt::hi(num2.data[j]) + carry2;
+			temp += part2.data[i + j + 1];
+			carry2 = (temp < part2.data[i + j + 1]) ? 0x1 : 0x0;
+			part2.data[i + j + 1] = temp;
+
+			temp = BigUnsignedInt::hi(num1.data[i])*BigUnsignedInt::lo(num2.data[j]);
+			temp += part2.data[i + j + 1];
+			carry2 += (temp < part2.data[i + j + 1]) ? 0x1 : 0x0;
+			part2.data[i + j + 1] = temp;
+		}
+		if (carry1 != 0) {
+			//at this time part1.data[i+num2.numLength+1] will be 0
+			part1.data[i + num2.numLength + 1] = carry1;
+		}
+		if (carry2 != 0) {
+			//at this time part2.data[i+num2.numLength+1] will be 0
+			part2.data[i + num2.numLength + 1] = carry2;
+		}
 	}
-	return ret;
+	part1.CalculateNumLengthFrom(returnSize);
+	part2.CalculateNumLengthFrom(returnSize);
+	return (part1 + (part2 >> (BigUnsignedInt::BaseDataLen / 2)));
 }
 
 BigUnsignedInt& BigUnsignedInt::operator+=(const BigUnsignedInt& num)
@@ -296,19 +329,7 @@ BigUnsignedInt operator<<(const BigUnsignedInt& num, unsigned int k)
 	temp <<= k;
 	return temp;
 }
-BigUnsignedInt operator<<(const BigUnsignedInt& num, int k)
-{
-	BigUnsignedInt temp(num);
-	temp <<= k;
-	return temp;
-}
 BigUnsignedInt operator>>(const BigUnsignedInt& num, unsigned int k)
-{
-	BigUnsignedInt temp(num);
-	temp >>= k;
-	return temp;
-}
-BigUnsignedInt operator>>(const BigUnsignedInt& num, int k)
 {
 	BigUnsignedInt temp(num);
 	temp >>= k;
@@ -394,18 +415,6 @@ BigUnsignedInt& BigUnsignedInt::operator<<=(unsigned int k)
 	numLength = newLen;
 	return (*this);
 }
-BigUnsignedInt& BigUnsignedInt::operator<<=(int k)
-{
-	unsigned int num;
-	if (k < 0) {
-		num = -k;
-		return ((*this) >>= num);
-	}
-	else {
-		num = k;
-		return ((*this) <<= num);
-	}
-}
 BigUnsignedInt& BigUnsignedInt::operator>>=(unsigned int k)
 {
 	unsigned int move = k / BaseDataLen;
@@ -435,18 +444,6 @@ BigUnsignedInt& BigUnsignedInt::operator>>=(unsigned int k)
 	}
 	numLength = newLen;
 	return (*this);
-}
-BigUnsignedInt& BigUnsignedInt::operator>>=(int k)
-{
-	unsigned int num;
-	if (k < 0) {
-		num = -k;
-		return ((*this) <<= num);
-	}
-	else {
-		num = k;
-		return ((*this) >>= num);
-	}
 }
 BigUnsignedInt& BigUnsignedInt::operator&=(const BigUnsignedInt& num)
 {
@@ -684,4 +681,19 @@ void BigUnsignedInt::CalculateNumLengthFrom(unsigned int n)
 		}
 	}
 	return;
+}
+BigUnsignedInt pow(const BigUnsignedInt& base, const BigUnsignedInt& exp)
+{
+	BigUnsignedInt result=1;
+	BigUnsignedInt temp = base;
+	const unsigned int floorLog = exp.floorLog2();
+	if (exp == 0)
+		return result;
+
+	for(unsigned int i = 0; i<=floorLog;i++) {
+		if (exp.getNthBit(i) != 0)
+			result *= temp;
+		temp *= temp;
+	}
+	return result;
 }

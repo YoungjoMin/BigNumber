@@ -10,6 +10,28 @@ class BigUnsignedInt
 {
 	using BaseData = unsigned long long;
 private:
+	static BaseData MultiplyLowerData(BaseData num1, BaseData num2)
+	{
+		return num1*num2;
+	}
+	static BaseData MultiplyUpperData(BaseData a, BaseData b)
+	{
+		BaseData s0, s1, s2, x;
+		x = lo(a) * lo(b);
+		s0 = lo(x);
+
+		x = hi(a) * lo(b) + hi(x);
+		s1 = lo(x);
+		s2 = hi(x);
+
+		x = s1 + lo(a) * hi(b);
+		s1 = lo(x);
+
+		x = s2 + hi(a) * hi(b) + hi(x);
+		return x;
+	}
+	inline static BaseData lo(BaseData num) {return (((BaseData)1 << (BaseDataLen / 2)) - 1)&num;}
+	inline static BaseData hi(BaseData num) { return (num >> (BaseDataLen / 2)); }
 	static bool isOutStringHexMode; //default false
 	constexpr static size_t BaseDataLen = sizeof(BaseData) * 8;
 
@@ -40,8 +62,8 @@ public:
 	friend BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
 	friend BigUnsignedInt operator/(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
 	friend BigUnsignedInt operator%(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
-
-
+	
+	
 	BigUnsignedInt& operator++();
 	BigUnsignedInt& operator--(); // num = 0 then throws underflow error
 
@@ -58,17 +80,13 @@ public:
 	BigUnsignedInt& operator%=(const BigUnsignedInt& num);
 
 	friend BigUnsignedInt operator<<(const BigUnsignedInt& num, unsigned int k);
-	friend BigUnsignedInt operator<<(const BigUnsignedInt& num, int k);
 	friend BigUnsignedInt operator>>(const BigUnsignedInt& num, unsigned int k);
-	friend BigUnsignedInt operator>>(const BigUnsignedInt& num, int k);
 	friend BigUnsignedInt operator&(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
 	friend BigUnsignedInt operator|(const BigUnsignedInt& num, const BigUnsignedInt& num2);
-	friend BigUnsignedInt operator^(const BigUnsignedInt& num, const BigUnsignedInt& num2);
+	friend BigUnsignedInt operator^(const BigUnsignedInt& num, const BigUnsignedInt& num2);//xor function
 
 	BigUnsignedInt& operator<<=(unsigned int k);
-	BigUnsignedInt& operator<<=(int k);
 	BigUnsignedInt& operator>>=(unsigned int k);
-	BigUnsignedInt& operator>>=(int k);
 	BigUnsignedInt& operator&=(const BigUnsignedInt& num);
 	BigUnsignedInt& operator|=(const BigUnsignedInt& num);
 	BigUnsignedInt& operator^=(const BigUnsignedInt& num);//xor function
@@ -85,11 +103,7 @@ public:
 
 	operator std::string() const;
 
-	BigUnsignedInt pow(const BigUnsignedInt& base, unsigned int exp);
-	BigUnsignedInt pow(const BigUnsignedInt& base, const BigUnsignedInt& exp);
-	BigUnsignedInt hyperOperation(const BigUnsignedInt& num1, const BigUnsignedInt& num2, int k);
-
 	std::string getHexStr() const;
 	std::string getDexStr() const;
-	friend BigUnsignedInt multiply(const BigUnsignedInt& num1, const BigUnsignedInt& num2);
+	friend BigUnsignedInt pow(const BigUnsignedInt& base, const BigUnsignedInt& exp);
 };
