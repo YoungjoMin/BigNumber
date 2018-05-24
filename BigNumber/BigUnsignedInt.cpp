@@ -123,10 +123,7 @@ BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 	if ((num1 == 0) | (num2 == 0))
 		return 0;
 
-	unsigned int returnSize = num1.numLength + num2.numLength + 1;
-	unsigned int newSize = std::max(num1.dataSize, num2.dataSize);
-	while (newSize < returnSize)
-		newSize *= 2;
+	unsigned int newSize = num1.numLength + num2.numLength + 1;
 	BigUnsignedInt::BaseData carry1 = 0, carry2 = 0, temp;
 	BigUnsignedInt part1, part2;
 	part1.IncreaseDataSize(newSize);
@@ -163,19 +160,17 @@ BigUnsignedInt operator*(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
 			part2.data[i + num2.numLength + 1] = carry2;
 		}
 	}
-	part1.CalculateNumLengthFrom(returnSize);
-	part2.CalculateNumLengthFrom(returnSize);
+	part1.CalculateNumLengthFrom(newSize);
+	part2.CalculateNumLengthFrom(newSize);
 	return (part1 + (part2 >> (BigUnsignedInt::BaseDataLen / 2)));
 }
-
 BigUnsignedInt& BigUnsignedInt::operator+=(const BigUnsignedInt& num)
 {
 	BaseData MidResult;
 	BaseData carry = 0;
 	bool isCarry = false;
 
-	if (num.numLength > dataSize)
-		this->IncreaseDataSize(num.dataSize);
+	this->IncreaseDataSize(num.dataSize);
 
 	for (unsigned int i = 0; i < num.numLength; i++) {
 		BaseData& a = data[i];
@@ -198,9 +193,7 @@ BigUnsignedInt& BigUnsignedInt::operator+=(const BigUnsignedInt& num)
 	numLength = std::max(num.numLength, numLength);
 	if (isCarry) {
 		numLength++;
-		if (numLength > dataSize) {
-			this->IncreaseDataSize(2 * dataSize);
-		}
+		this->IncreaseDataSize(numLength);
 		data[numLength - 1] = 0x1;
 	}
 	return (*this);
@@ -249,10 +242,7 @@ BigUnsignedInt& BigUnsignedInt::operator++()
 	}
 	if (carry) {
 		numLength++;
-		if (numLength > dataSize) {
-			unsigned int newSize = (dataSize == 0) ? 1 : 2 * dataSize;
-			this->IncreaseDataSize(newSize);
-		}
+		this->IncreaseDataSize(numLength);
 		data[numLength - 1] = 0x1;
 	}
 	return (*this);
@@ -383,14 +373,7 @@ BigUnsignedInt& BigUnsignedInt::operator<<=(unsigned int k)
 	if (numLength == 0 || k == 0)
 		return (*this);
 
-
-	if (dataSize < newLen) {
-		unsigned int newDataSize = dataSize;
-		while (newDataSize < newLen)
-			newDataSize *= 2;
-		this->IncreaseDataSize(newDataSize);
-	}
-
+	this->IncreaseDataSize(newLen);
 
 	if (a == 0) {////if a==0 b = BaseDataLen, but num>>BaseDataLen == num , doesn't do anything. so, have to consider this case
 		for (unsigned int i = numLength + move - 1; i >= move; i--)
@@ -457,8 +440,7 @@ BigUnsignedInt& BigUnsignedInt::operator&=(const BigUnsignedInt& num)
 }
 BigUnsignedInt& BigUnsignedInt::operator|=(const BigUnsignedInt& num)
 {
-	if (num.numLength > dataSize)
-		this->IncreaseDataSize(num.dataSize);
+	this->IncreaseDataSize(num.dataSize);
 	for (unsigned int i = 0; i < num.numLength; i++) {
 		data[i] |= num.data[i];
 	}
@@ -467,12 +449,11 @@ BigUnsignedInt& BigUnsignedInt::operator|=(const BigUnsignedInt& num)
 }
 BigUnsignedInt& BigUnsignedInt::operator^=(const BigUnsignedInt& num)
 {
-	if (num.numLength > dataSize)
-		this->IncreaseDataSize(num.dataSize);
+	this->IncreaseDataSize(num.dataSize);
 	for (unsigned int i = 0; i < num.numLength; i++) {
 		data[i] ^= num.data[i];
 	}
-	this->CalculateNumLengthFrom(numLength);
+	this->CalculateNumLengthFrom(std::max(numLength,num.numLength));
 	return (*this);
 }
 bool operator==(const BigUnsignedInt& num1, const BigUnsignedInt& num2)
@@ -649,11 +630,16 @@ void BigUnsignedInt::stringConversionHexMod(bool sign)
 	BigUnsignedInt::isOutStringHexMode = sign;
 }
 
-void BigUnsignedInt::IncreaseDataSize(unsigned int newSize)
+void BigUnsignedInt::IncreaseDataSize(unsigned int wantedSize)
 {
-	if (newSize <= dataSize)
-		return;
+	unsigned int newSize;
 	BaseData * newData;
+
+	if (wantedSize <= dataSize)
+		return;
+	newSize = std::max(1u, dataSize);
+	while (newSize < wantedSize)
+		newSize *= 2;
 	newData = new BaseData[newSize];
 
 	std::memcpy(newData, data, sizeof(BaseData)*dataSize);
@@ -674,7 +660,7 @@ bool BigUnsignedInt::getNthBit(unsigned int n) const
 void BigUnsignedInt::CalculateNumLengthFrom(unsigned int n)
 {
 	numLength = 0;
-	for (int i = n-1; i >= 0; i--) {
+	for (int i = std::min(n,dataSize)-1; i >= 0; i--) {
 		if (data[i] != 0) {
 			numLength = i + 1;
 			break;
