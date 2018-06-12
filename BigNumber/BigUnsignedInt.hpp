@@ -30,7 +30,7 @@ public:
 	BigUnsignedInt(unsigned long long num);
 	BigUnsignedInt(const BigUnsignedInt& num);
 	BigUnsignedInt(BigUnsignedInt && num);
-	BigUnsignedInt(const std::string& str);
+	BigUnsignedInt(const std::string & str);
 
 	virtual ~BigUnsignedInt();
 

@@ -68,7 +68,108 @@ BigUnsignedInt::BigUnsignedInt(unsigned long long num)
 		numLength = 1;
 	}
 }
+BigUnsignedInt::BigUnsignedInt(const std::string& str)
+{
+	if (str.length() < 2) {
+		if (str.empty()) {
+			dataSize = 0;
+			data = nullptr;
+			numLength = 0;
+		}
+		else {
+			BaseData num = str[0] - '0';
+			if (num == 0) {
+				dataSize = 0;
+				data = nullptr;
+				numLength = 0;
+			}
+			else {
+				dataSize = 1;
+				data = new BaseData[dataSize];
+				data[0] = num;
+				numLength = 1;
+			}
+		}
+		return;
+	}
 
+	bool isHexInput = (str[0] == '0' && str[1] == 'x');
+
+	if (isHexInput) {
+		dataSize = (str.length() * 4 - 7 + BaseDataLen) / BaseDataLen;
+		data = new BaseData[dataSize];
+		BaseData temp=0;
+		unsigned int i = 0, j = 0;
+		for (auto iter = str.rbegin(); iter != str.rend(); iter++) {
+			const char &c = *iter;
+			if ('0' <= c && c <= '9') {
+				temp |= (BaseData)(c - '0') << j;
+			}
+			else if ('A' <= c && c <= 'F') {
+				temp |= (BaseData)(c - 'A' + 10) << j;
+			}
+			else if ('a' <= c && c <= 'f') {
+				temp |= (BaseData)(c - 'a' + 10) << j;
+			}
+			else if (c == 'x') {
+				data[i++] = temp;
+				break;
+			}
+			else
+				continue;
+
+			j += 4;
+			if (j >= BaseDataLen) {
+				data[i++] = temp;
+				temp = j = 0;
+			}
+		}
+		for (; i < dataSize; i++)
+			data[i] = 0;
+	}
+	else {
+		const double log2_10 = std::log2(10);
+		dataSize = (((str.length() + 2)*log2_10) / BaseDataLen) + 2;
+		data = new BaseData[dataSize];
+		std::memset(data, 0, sizeof(BaseData)*dataSize);
+		char * buffer = new char[str.length()];
+		int i;
+		unsigned int leftover, len = 0, j, k;
+		for (auto iter = str.rbegin(); iter != str.rend(); iter++) {
+			const char& c = *iter;
+			if (c<'0' || c>'9')
+				continue;
+			buffer[len++] = c-'0';
+		}
+		j = k = 0;
+		while (len > 1) {
+			leftover = buffer[len-1];
+			buffer[len - 1] = 0;
+			for (i = len - 2; i >= 0; i--) {
+				leftover = leftover * 10 + buffer[i];
+				buffer[i] = leftover >> 4;
+				leftover &= 0xF;
+			}
+			if (buffer[len - 2] == 0)
+				len = len - 2;
+			else
+				len = len - 1;
+
+			data[j] |= ((BaseData)leftover << k);
+			k += 4;
+			if (k >= BaseDataLen) {
+				k = 0;
+				j++;
+			}
+
+		}
+		if (len == 1) {
+			data[j] |= ((BaseData)buffer[0] << k);
+		}
+		delete[] buffer;
+	}
+	CalculateNumLengthFrom(dataSize);
+}
 BigUnsignedInt::BigUnsignedInt(const BigUnsignedInt& num)
 {
 	if (num.numLength == 0) {
